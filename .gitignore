@@ -1,0 +1,25 @@
+# .gitignore
+
+# Ignore configuration file
+/backend/config.ini
+
+# Ignore processed tickets file
+/backend/processed_tickets.csv
+
+# Ignore Python cache files
+/backend/__pycache__/
+
+# Ignore .ipynb checkpoints
+/backend/.ipynb_checkpoints/
+
+# Ignore PEM files
+/backend/192.168.1.90-key.pem
+/backend/192.168.1.90.pem
+
+# Ignore Node.js files
+/backend/node_modules/
+/backend/package-lock.json
+/backend/package.json
+
+# Ignore CSV files
+/backend/tickets.csv
