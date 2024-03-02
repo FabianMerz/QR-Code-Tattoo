@@ -24,3 +24,4 @@
 # Ignore CSV files
 /backend/tickets.csv
 .DS_Store
+backend/.DS_Store
