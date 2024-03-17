@@ -38,6 +38,7 @@ const processQRCode = async (qrCode) => {
             },
             body: JSON.stringify({ qrCode: qrCode }),
         });
+
         const data = await response.text();
         console.log('Success:', data);
         const resultElement = document.getElementById('result');
@@ -49,7 +50,7 @@ const processQRCode = async (qrCode) => {
             `;
             // Change the background color to green
             document.body.style.backgroundColor = 'green';
-        } else {
+        } else if (data === 'false') {
             // Create reject element
             resultElement.innerHTML = `
                 <h2>Abgelehnt!</h2>
@@ -57,6 +58,18 @@ const processQRCode = async (qrCode) => {
             `;
             // Change the background color to red
             document.body.style.backgroundColor = 'red';
+        } else {
+            const jsonData = JSON.parse(data);
+            if (jsonData.status === 'alreadyChecked') {
+                // Create already checked element
+                resultElement.innerHTML = `
+                    <h2>Bereits überprüft!</h2>
+                    <p>Ergebnis des Scans: ${qrCode}</p>
+                    <p>Entwertet am: ${jsonData.checkedDate} um ${jsonData.checkedTime}</p>
+                `;
+                // Change the background color to yellow
+                document.body.style.backgroundColor = 'yellow';
+            }
         }
 
         // Change the background color back to its original color after 3 seconds and reload the page

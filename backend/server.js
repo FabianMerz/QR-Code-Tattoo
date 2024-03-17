@@ -21,34 +21,67 @@ appHttp.use(bodyParser.json());
 // Enable CORS
 appHttp.use(cors());
 
-// Handle POST requests to the /decode endpoint
+function logMessage(message) {
+    const currentTime = new Date();
+    const formattedTime = currentTime.toLocaleString('de-DE', { timeZone: 'Europe/Berlin' });
+    const logMessage = `${formattedTime}: ${message}\n`;
+    fs.appendFileSync('server.log', logMessage);
+}
+
+try {
+    fs.unlinkSync('server.log');
+    logMessage('Log file cleared');
+} catch (err) {
+    logMessage('Error clearing log file: ' + err);
+
+}
+
 appHttp.post('/decode', (req, res) => {
     const qrCode = req.body.qrCode;
-
-    // Create a SHA256 hash of the QR code
     const hash = crypto.createHash('sha256').update(qrCode).digest('hex');
 
-    // Load the list of already processed ticket IDs
-    let hashList;
+    let checkedHashList;
     try {
-        hashList = fs.readFileSync('processed_tickets.csv', 'utf-8').split('\n');
+        const checkedTicketsData = fs.readFileSync('checked_tickets.csv', 'utf-8');
+        checkedHashList = checkedTicketsData.split('\n').map(line => line.split(','));
     } catch (err) {
-        console.error('Error reading processed_tickets.csv:', err);
-        hashList = [];
+        logMessage('Error reading checked_tickets.csv: ' + err);
+        checkedHashList = [];
     }
 
-    // Check if the hash is in the list
-    const isHashInList = hashList.includes(hash);
+    const checkedTicket = checkedHashList.find(line => line[0] === hash);
 
-    console.log(`QR Code: ${qrCode}`);
-    console.log(`Hash: ${hash}`);
-    console.log(`Is hash in list: ${isHashInList}`);
+    if (checkedTicket) {
+        const checkedDate = checkedTicket[1];
+        const checkedTime = checkedTicket[2];
+        logMessage(`Ticket already checked on ${checkedDate} at ${checkedTime}`);
+        res.json({ status: "alreadyChecked", checkedDate, checkedTime });
+    } else {
+        let processedHashList;
+        try {
+            processedHashList = fs.readFileSync('processed_tickets.csv', 'utf-8').split('\n');
+        } catch (err) {
+            logMessage('Error reading processed_tickets.csv: ' + err);
+            processedHashList = [];
+        }
 
-    // Respond with true if the hash is in the list, false otherwise
-    res.send(isHashInList.toString());
+        const isHashInProcessedList = processedHashList.includes(hash);
+
+        logMessage(`QR Code: ${qrCode}`);
+        logMessage(`Hash: ${hash}`);
+        logMessage(`Is hash in processed list: ${isHashInProcessedList}`);
+
+        if (isHashInProcessedList) {
+            const currentTime = new Date();
+            const formattedTime = currentTime.toLocaleString('de-DE', { timeZone: 'Europe/Berlin' });
+            fs.appendFileSync('checked_tickets.csv', `${hash},${formattedTime}\n`);
+            res.send("true");
+        } else {
+            res.send("false");
+        }
+    }
 });
 
-// Serve static files
 appHttps.use((req, res, next) => {
     const filePath = path.join(__dirname, 'public', req.url === '/' ? 'index.html' : req.url);
     fs.readFile(filePath, (err, data) => {
@@ -62,10 +95,9 @@ appHttps.use((req, res, next) => {
 });
 
 https.createServer(options, appHttps).listen(8080, () => {
-    console.log(`HTTPS server listening at https://localhost:8080`);
+    logMessage(`HTTPS server listening at https://localhost:8080`);
 });
 
-// Create an HTTPS server with your app and options
 https.createServer(options, appHttp).listen(3000, () => {
-    console.log('HTTPS Server running on port 3000');
+    logMessage('HTTPS Server running on port 3000');
 });
