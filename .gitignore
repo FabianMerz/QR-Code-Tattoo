@@ -33,3 +33,8 @@ backend/public/.DS_Store
 .DS_Store
 backend/.DS_Store
 backend/public/.DS_Store
+backend/.DS_Store
+backend/server.log
+backend/app.log
+backend/server.log
+.DS_Store
